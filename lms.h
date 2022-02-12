@@ -47,7 +47,7 @@ public:
 class LMS_Priv {
 private:
     std::array<uint8_t ,16> I;
-    LM_OTS_Priv** OTS_PRIV;
+    std::array<uint8_t, 32> SEED{};
     uint32_t q;
     uint8_t *T;
     void compute_leafs();

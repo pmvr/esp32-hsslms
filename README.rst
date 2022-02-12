@@ -4,7 +4,7 @@ esp32-hsslms
 This is an implementation of Leighton-Micali Hash-Based Signatures for an ESP32
 according to `RFC 8554 <https://www.rfc-editor.org/rfc/rfc8554.html>`_ using the Arduino-IDE.
 
-The implementation is based on the source code of `cpp-hsslms<https://github.com/pmvr/cpp-hsslms>`_ and is meant as a reference and for educational purposes.
+The implementation is based on the source code of `cpp-hsslms<https://github.com/pmvr/cpp-hsslms>`_ and is meant as a reference and for educational purposes. In contrast it does not use threads for key generation and to save memory it does not store LM-OTS private keys in RAM and therefore uses a pseudo random number generator for recomputation of the private keys for signing.
 
 The implementation provides 3 classes:
 
@@ -26,7 +26,9 @@ Key Generationo of H5
 +==========+=====+=====+=====+=====+
 | w        | 1   | 2   | 4   | 8   |
 +----------+-----+-----+-----+-----+
-| H5       | n/a | 0.5 | 1.0 | 8.3 |
+| H5       | 0.63| 0.56| 1.1 | 8.4 |
++----------+-----+-----+-----+-----+
+| H10      | 20  | 18  | 34  | 268 |
 +----------+-----+-----+-----+-----+
 
 
@@ -38,7 +40,9 @@ Performance of Signature Generation:
 +==========+=====+=====+=====+=====+
 | w        | 1   | 2   | 4   | 8   |
 +----------+-----+-----+-----+-----+
-| H5       | n/a | 9   | 18  | 131 |
+| H5       | 16  | 12  | 19  | 109 |
++----------+-----+-----+-----+-----+
+| H10      | 16  | 13  | 18  | 132 |
 +----------+-----+-----+-----+-----+
 
 Performance of Signature Verification:
@@ -49,7 +53,9 @@ Performance of Signature Verification:
 +==========+=====+=====+=====+=====+
 | w        | 1   | 2   | 4   | 8   |
 +----------+-----+-----+-----+-----+
-| H5       | n/a | 9   | 16  | 132 |
+| H5       | 8   | 9   | 16  | 155 |
++----------+-----+-----+-----+-----+
+| H10      | 8   | 9   | 18  | 132 |
 +----------+-----+-----+-----+-----+
 
 License

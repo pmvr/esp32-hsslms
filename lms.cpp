@@ -29,11 +29,13 @@ void LMS_Priv::compute_leafs() {
     mbedtls_sha256_init(&tmp_ctx);
     mbedtls_sha256_starts_ret(&tmp_ctx, 0);
     mbedtls_sha256_update_ret(&tmp_ctx, I.data(), I.size());
-    for (uint32_t r=(1 << typecode.h); r<(1 << (typecode.h+1)); r++) {
+    uint32_t qi=0;
+    for (uint32_t r=(1 << typecode.h); r<(1 << (typecode.h+1)); r++, qi++) {
         T_ctx = tmp_ctx;
         mbedtls_sha256_update_ret(&T_ctx, (uint8_t*)u32str(r).c_str(), 4);
         mbedtls_sha256_update_ret(&T_ctx, (uint8_t*)D_LEAF.c_str(), D_LEAF.size());
-        mbedtls_sha256_update_ret(&T_ctx, (uint8_t*)OTS_PRIV[r-(1 << typecode.h)]->gen_pub().get_K().c_str(), DIGEST_LENGTH);
+        LM_OTS_Priv OTS_PRIV = LM_OTS_Priv(lmotsAlgorithmType, I, qi, SEED);
+        mbedtls_sha256_update_ret(&T_ctx, (uint8_t*)OTS_PRIV.gen_pub().get_K().c_str(), DIGEST_LENGTH);
         mbedtls_sha256_finish_ret(&T_ctx, T+r*DIGEST_LENGTH);
     }
 }
@@ -56,11 +58,9 @@ void LMS_Priv::compute_knots(uint32_t i) {
 LMS_Priv::LMS_Priv(const LMS_ALGORITHM_TYPE& typecode, const LMOTS_ALGORITHM_TYPE& lmotsAlgorithmType)
         : typecode(typecode), lmotsAlgorithmType(lmotsAlgorithmType), I {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0} {
     esp_fill_random(I.data(), I.size());
-    OTS_PRIV = new LM_OTS_Priv*[1 << typecode.h];
-    for (uint32_t qi=0; qi<(1 << typecode.h); qi++) {
-        OTS_PRIV[qi] = new LM_OTS_Priv(lmotsAlgorithmType, I, qi);
-    }
+    esp_fill_random(SEED.data(), SEED.size());
     q = 0;
+
     T = new uint8_t[std::size_t(DIGEST_LENGTH) * std::size_t(1 << (typecode.h + 1))];
     compute_leafs();
     for (auto i=typecode.h-1; i>=0; i--) {
@@ -71,26 +71,22 @@ LMS_Priv::LMS_Priv(const LMS_ALGORITHM_TYPE& typecode, const LMOTS_ALGORITHM_TYP
 LMS_Priv::LMS_Priv(const LMS_Priv &obj) {
     I = obj.I;
     q = obj.q;
+    SEED = obj.SEED;
     typecode = obj.typecode;
     lmotsAlgorithmType = obj.lmotsAlgorithmType;
-    OTS_PRIV = new LM_OTS_Priv*[1 << typecode.h];
-    for (auto i=0; i < (1 << typecode.h); i++) OTS_PRIV[i] = obj.OTS_PRIV[i];
     T = new uint8_t[std::size_t(DIGEST_LENGTH) * std::size_t(1 << (typecode.h + 1))];
     memcpy(T, obj.T, std::size_t(DIGEST_LENGTH) * std::size_t(1 << (typecode.h + 1)));
 }
 
 LMS_Priv::~LMS_Priv() {
-    for (uint32_t qi=0; qi<(1 << typecode.h); qi++) {
-        delete OTS_PRIV[qi];
-    }
-    delete[] OTS_PRIV;
     delete[] T;
 }
 
 std::string LMS_Priv::sign(const std::string &message) {
     if (q >= (1 << typecode.h)) throw FAILURE("LMS private keys are exhausted.");
+    LM_OTS_Priv OTS_PRIV = LM_OTS_Priv(lmotsAlgorithmType, I, q, SEED);
     std::string signature = u32str(q);
-    signature += OTS_PRIV[q]->sign(message);
+    signature += OTS_PRIV.sign(message);
     signature += typecode.typecode;
     uint32_t r = (1 << typecode.h) + q;
     for (auto i=0; i<typecode.h; i++) {

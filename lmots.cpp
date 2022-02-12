@@ -23,16 +23,29 @@ LMOTS_ALGORITHM_TYPE findLmotsAlgType(const std::string &bstr) {
     return LMOTS_ALGORITHM_TYPES.at(found);
 }
 
-LM_OTS_Priv::LM_OTS_Priv(const LMOTS_ALGORITHM_TYPE& lmotsAlgorithmType, std::array<uint8_t, 16>& I, uint32_t q)
-        : lmotsAlgorithmType(lmotsAlgorithmType), I(I), q(q), used(false) {
+LM_OTS_Priv::LM_OTS_Priv(const LMOTS_ALGORITHM_TYPE& lmotsAlgorithmType, std::array<uint8_t, 16>& I, uint32_t q, std::array<uint8_t, 32>& SEED)
+        : lmotsAlgorithmType(lmotsAlgorithmType), I(I), q(q), SEED(SEED), used(false) {
     x = new uint8_t[DIGEST_LENGTH * lmotsAlgorithmType.p];
-    esp_fill_random(x, DIGEST_LENGTH*lmotsAlgorithmType.p);
+    mbedtls_sha256_context hash_ctx, tmp_ctx;
+    const uint8_t ff[] = {0xff};
+    mbedtls_sha256_init(&tmp_ctx);
+    mbedtls_sha256_starts_ret(&tmp_ctx, 0);
+    mbedtls_sha256_update_ret(&tmp_ctx, I.data(), I.size());
+    mbedtls_sha256_update_ret(&hash_ctx, (uint8_t*)u32str(q).c_str(), 4);
+    for (uint16_t i=0; i<lmotsAlgorithmType.p; i++) {
+        hash_ctx = tmp_ctx;
+        mbedtls_sha256_update_ret(&hash_ctx, (uint8_t*)u16str(i).c_str(), 2);
+        mbedtls_sha256_update_ret(&hash_ctx, ff, 1);
+        mbedtls_sha256_update_ret(&hash_ctx, SEED.data(), SEED.size());
+        mbedtls_sha256_finish_ret(&hash_ctx, x+DIGEST_LENGTH*i);      
+    }
 }
 
 LM_OTS_Priv::LM_OTS_Priv(const LM_OTS_Priv &obj) {
     lmotsAlgorithmType = obj.lmotsAlgorithmType;
     I = obj.I;
     q = obj.q;
+    SEED = obj.SEED;
     used = obj.used;
     x = new uint8_t[DIGEST_LENGTH * lmotsAlgorithmType.p];
     memcpy(x, obj.x, DIGEST_LENGTH * lmotsAlgorithmType.p);
