@@ -51,7 +51,6 @@ private:
     LMOTS_ALGORITHM_TYPE lmotsAlgorithmType;
     std::array<uint8_t, 16> I{};
     uint32_t q;
-    std::array<uint8_t, 32> SEED{};
     uint8_t *x;
     bool used{};
 public:

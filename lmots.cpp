@@ -24,7 +24,7 @@ LMOTS_ALGORITHM_TYPE findLmotsAlgType(const std::string &bstr) {
 }
 
 LM_OTS_Priv::LM_OTS_Priv(const LMOTS_ALGORITHM_TYPE& lmotsAlgorithmType, std::array<uint8_t, 16>& I, uint32_t q, std::array<uint8_t, 32>& SEED)
-        : lmotsAlgorithmType(lmotsAlgorithmType), I(I), q(q), SEED(SEED), used(false) {
+        : lmotsAlgorithmType(lmotsAlgorithmType), I(I), q(q), used(false) {
     x = new uint8_t[DIGEST_LENGTH * lmotsAlgorithmType.p];
     mbedtls_sha256_context hash_ctx, tmp_ctx;
     const uint8_t ff[] = {0xff};
@@ -45,7 +45,6 @@ LM_OTS_Priv::LM_OTS_Priv(const LM_OTS_Priv &obj) {
     lmotsAlgorithmType = obj.lmotsAlgorithmType;
     I = obj.I;
     q = obj.q;
-    SEED = obj.SEED;
     used = obj.used;
     x = new uint8_t[DIGEST_LENGTH * lmotsAlgorithmType.p];
     memcpy(x, obj.x, DIGEST_LENGTH * lmotsAlgorithmType.p);
