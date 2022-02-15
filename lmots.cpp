@@ -31,7 +31,7 @@ LM_OTS_Priv::LM_OTS_Priv(const LMOTS_ALGORITHM_TYPE& lmotsAlgorithmType, std::ar
     mbedtls_sha256_init(&tmp_ctx);
     mbedtls_sha256_starts_ret(&tmp_ctx, 0);
     mbedtls_sha256_update_ret(&tmp_ctx, I.data(), I.size());
-    mbedtls_sha256_update_ret(&hash_ctx, (uint8_t*)u32str(q).c_str(), 4);
+    mbedtls_sha256_update_ret(&tmp_ctx, (uint8_t*)u32str(q).c_str(), 4);
     for (uint16_t i=0; i<lmotsAlgorithmType.p; i++) {
         hash_ctx = tmp_ctx;
         mbedtls_sha256_update_ret(&hash_ctx, (uint8_t*)u16str(i).c_str(), 2);
